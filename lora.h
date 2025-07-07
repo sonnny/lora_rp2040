@@ -29,6 +29,13 @@ gpio_put(CS,0);
 spi_write_blocking(spi1,SETPACKETTYPE,sizeof(SETPACKETTYPE));
 gpio_put(CS,1); sleep_ms(100);
 
+//stoptimeronpreamble
+spiBuffer[0] = 0x9F;
+spiBuffer[1] = 0x00;
+gpio_put(CS,0);
+spi_write_blocking(spi1,spiBuffer,2);
+gpio_put(CS,1); sleep_ms(100);
+
 //setmodulation
 gpio_put(CS,0);
 spi_write_blocking(spi1,SETMODULATION,sizeof(SETMODULATION));
@@ -98,3 +105,57 @@ gpio_put(CS,1);
 if(result == 0x14) blink(1000);
 else blink(100);}
 
+void setModeReceive(){
+  //setpacketparam
+  gpio_put(CS,0);
+  spi_write_blocking(spi1,SETRXPACKETPARAM,sizeof(SETRXPACKETPARAM));
+  gpio_put(CS,1); sleep_ms(100);
+  
+  //setrx
+  spiBuffer[0] = 0x82;
+  spiBuffer[1] = 0xFF;
+  spiBuffer[2] = 0xFF;
+  spiBuffer[3] = 0xFF;
+  gpio_put(CS,0);
+  spi_write_blocking(spi1,spiBuffer,4);
+  gpio_put(CS,1); sleep_ms(100);}
+  
+int lora_receive_async(uint8_t* buff, int buffMaxLen){
+
+uint8_t bufferResult[32];
+
+//printf("lora_receive_async \r\n");
+
+  setModeReceive();
+  if(gpio_get(DIO_1) == 0) {return -1;} //when high packet is ready
+  
+  //clearirqstatus
+  gpio_put(CS,0);
+  spi_write_blocking(spi1,CLEARIRQ,sizeof(CLEARIRQ));
+  gpio_put(CS,1); sleep_ms(100);
+  
+  //getrxbufferstatus
+  spiBuffer[0] = 0x13;
+  spiBuffer[1] = 0xFF;
+  spiBuffer[2] = 0xFF;
+  spiBuffer[3] = 0xFF;
+  gpio_put(CS,0);
+  spi_write_read_blocking(spi1,spiBuffer,bufferResult,4);
+  gpio_put(CS,1); sleep_ms(100);
+  
+  uint8_t payloadLen =   bufferResult[2];   //how long the lora packet is
+  uint8_t startAddress = bufferResult[3];   //where in memory is the packet
+  
+  if(buffMaxLen < payloadLen) {payloadLen = buffMaxLen;}
+  
+  //read buffer
+  spiBuffer[0] = 0x1E; //opcode read buffer
+  spiBuffer[1] = startAddress;
+  spiBuffer[2] = 0x00; //dummy byte
+  
+  gpio_put(CS,0);
+  spi_write_blocking(spi1,spiBuffer,3);
+  spi_write_read_blocking(spi1,spiBuffer,buff,payloadLen);
+  gpio_put(CS,1);
+  return payloadLen;
+}//end lora_receive_async

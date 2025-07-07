@@ -20,7 +20,9 @@
 
 #define OPCODE_DIOIRQPARAMS 0x08
 //params set dio1 interrupt
-#define SETDIOIRQ (uint8_t[]){OPCODE_DIOIRQPARAMS,0xFF, 0xFF,0,0}
+#define SETDIOIRQ (uint8_t[]){OPCODE_DIOIRQPARAMS,0x00,0x02,0xFF,0xFF,0x00,0x00,0x00,0x00}
+//#define SETDIOIRQ (uint8_t[]){OPCODE_DIOIRQPARAMS,0xFF, 0xFF,0,0}
+
 
 #define OPCODE_SETBUFFERADDRESS 0x8F
 #define SETBUFFERADDRESS (uint8_t[]){OPCODE_SETBUFFERADDRESS,0,0}
@@ -86,5 +88,20 @@
 //set frequency to 915_000_000
 #define OPCODE_SETFREQ915 0x86
 #define SETFREQ915 (uint8_t[]){OPCODE_SETFREQ915,0x39,0x30,0,0}
+
+#define OPCODE_CLEARIRQ 0x02
+//param clear all interrupts
+#define CLEARIRQ (uint8_t[]){OPCODE_CLEARIRQ,0xFF,0xFF}
+
+#define OPCODE_RXBUFFERSTATUS 0x13
+//param - radio status
+//param - lorapacketlength
+//param - memory offset
+#define GETRXBUFFERSTATUS (uint8_t[]){OPCODE_RXBUFFERSTATUS,0xFF,0xFF,0xFF}
+
+#define OPCODE_RXPACKETPARAM 0x8C
+#define SETRXPACKETPARAM (uint8_t[]){OPCODE_RXPACKETPARAM,0x00,0x0C,0x00,0xFF,0x00,0x00}
+
+
 
 #endif
