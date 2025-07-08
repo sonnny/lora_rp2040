@@ -102,6 +102,13 @@
 #define OPCODE_RXPACKETPARAM 0x8C
 #define SETRXPACKETPARAM (uint8_t[]){OPCODE_RXPACKETPARAM,0x00,0x0C,0x00,0xFF,0x00,0x00}
 
+#define OPCODE_SETRX 0x82
+#define SETRX (uint8_t[]){OPCODE_SETRX,0xFF,0xFF,0xFF}
 
+#define OPCODE_RXBUFFERSTATUS 0x13
+//param1 - radio status
+//param2 - lora packet length
+//param3 - address memory offset
+#define GETRXBUFFERSTATUS (uint8_t[]){OPCODE_RXBUFFERSTATUS,0xFF,0xFF,0xFF}
 
 #endif

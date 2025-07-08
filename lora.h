@@ -1,13 +1,18 @@
-//init from https://github.com/thekakester/Arduino-LoRa-Sx1262/blob/main/src/LoraSx1262.cpp
+//modified from https://github.com/thekakester/Arduino-LoRa-Sx1262/blob/main/src/LoraSx1262.cpp
+//see config.h for opcode and params
 #include <string.h>
 #include "pico.h"
 #include "config.h"
 
 uint8_t spiBuffer[32];
 
+/***********************
+ * lora init function
+ **********************/
 void init_lora(){
-printf("init lora\n");
+
   init_pico();
+  
   //reset
   gpio_put(RESET,0); sleep_ms(100);
   gpio_put(RESET,1); sleep_ms(100);
@@ -63,13 +68,16 @@ gpio_put(CS,1); sleep_ms(100);
 
 }//end init_lora
 
+/********************
+ * transmit function
+ ********************/
 void transmit(uint8_t *data, int dataLen){
   //standby
   gpio_put(CS,0);
   spi_write_blocking(spi1,SETSTDBY_RC,sizeof(SETSTDBY_RC));
   gpio_put(CS,1); sleep_ms(100);
   
-  //setpacketparam -- from pingpong could be problem
+  //setpacketparam
   gpio_put(CS,0);
   spi_write_blocking(spi1,SETPACKETPARAM,sizeof(SETPACKETPARAM));
   gpio_put(CS,1); sleep_ms(100);
@@ -86,48 +94,35 @@ void transmit(uint8_t *data, int dataLen){
     if (i + size > dataLen) { size = dataLen - i; }
     memcpy(spiBuffer,&(data[i]),size);
     spi_write_blocking(spi1,spiBuffer,size);}
-  gpio_put(CS,1); sleep_ms(1000);
+  gpio_put(CS,1); sleep_ms(300);
   
   //settx actual transmit
   gpio_put(CS,0);
   spi_write_blocking(spi1,SETTX,sizeof(SETTX));
-  gpio_put(CS,1); sleep_ms(1000);
+  gpio_put(CS,1); sleep_ms(300);
   
 }//end transmit
-  
-void register_test(){
-uint8_t result;
-uint8_t dummy=0;
-gpio_put(CS,0);
-spi_write_blocking(spi1,READREGTEST,sizeof(READREGTEST));
-int status=spi_write_read_blocking(spi1,&dummy,&result,1);
-gpio_put(CS,1);
-if(result == 0x14) blink(1000);
-else blink(100);}
 
-void setModeReceive(){
-  //setpacketparam
+/*********************
+ * received function
+ ********************/
+int lora_receive_async(uint8_t* buff, int buffMaxLen){
+
+uint8_t bufferResult[32];
+
+  //setrxpacketparam
   gpio_put(CS,0);
   spi_write_blocking(spi1,SETRXPACKETPARAM,sizeof(SETRXPACKETPARAM));
   gpio_put(CS,1); sleep_ms(100);
   
   //setrx
-  spiBuffer[0] = 0x82;
-  spiBuffer[1] = 0xFF;
-  spiBuffer[2] = 0xFF;
-  spiBuffer[3] = 0xFF;
   gpio_put(CS,0);
-  spi_write_blocking(spi1,spiBuffer,4);
-  gpio_put(CS,1); sleep_ms(100);}
-  
-int lora_receive_async(uint8_t* buff, int buffMaxLen){
+  spi_write_blocking(spi1,SETRX,sizeof(SETRX));
+  gpio_put(CS,1); sleep_ms(100); 
 
-uint8_t bufferResult[32];
-
-//printf("lora_receive_async \r\n");
-
-  setModeReceive();
-  if(gpio_get(DIO_1) == 0) {return -1;} //when high packet is ready
+  //dio_1 = 0 no packet received
+  //dio_1 = 1 packet is ready
+  if(gpio_get(DIO_1) == 0) {return -1;}
   
   //clearirqstatus
   gpio_put(CS,0);
@@ -135,12 +130,10 @@ uint8_t bufferResult[32];
   gpio_put(CS,1); sleep_ms(100);
   
   //getrxbufferstatus
-  spiBuffer[0] = 0x13;
-  spiBuffer[1] = 0xFF;
-  spiBuffer[2] = 0xFF;
-  spiBuffer[3] = 0xFF;
-  gpio_put(CS,0);
-  spi_write_read_blocking(spi1,spiBuffer,bufferResult,4);
+  //write GETRXBUFFERSTATUS
+  //read result to bufferResult
+  gpio_put(CS,0);             
+  spi_write_read_blocking(spi1,GETRXBUFFERSTATUS,bufferResult,sizeof(GETRXBUFFERSTATUS));
   gpio_put(CS,1); sleep_ms(100);
   
   uint8_t payloadLen =   bufferResult[2];   //how long the lora packet is
@@ -153,6 +146,9 @@ uint8_t bufferResult[32];
   spiBuffer[1] = startAddress;
   spiBuffer[2] = 0x00; //dummy byte
   
+  //copy received data to buff
+  //buff is uint8_t pointer from main
+  //pass as a param
   gpio_put(CS,0);
   spi_write_blocking(spi1,spiBuffer,3);
   spi_write_read_blocking(spi1,spiBuffer,buff,payloadLen);
