@@ -1,10 +1,6 @@
 //my_board.h
-#ifndef MYBOARD_H
-#define MYBOARD_H
-
-#include "pico/stdlib.h"
-#include "hardware/gpio.h"
-#include "hardware/spi.h"
+#ifndef CONFIG_H
+#define CONFIG_H
 
 #define OPCODE_STDBY  0x80
 //param 0 - STDBY_RC
@@ -19,10 +15,8 @@
 #define SETTXPARAMS (uint8_t[]){OPCODE_SETTXPARAMS,0,4}
 
 #define OPCODE_DIOIRQPARAMS 0x08
-//params set dio1 interrupt
+// param table 13-29
 #define SETDIOIRQ (uint8_t[]){OPCODE_DIOIRQPARAMS,0x00,0x02,0xFF,0xFF,0x00,0x00,0x00,0x00}
-//#define SETDIOIRQ (uint8_t[]){OPCODE_DIOIRQPARAMS,0xFF, 0xFF,0,0}
-
 
 #define OPCODE_SETBUFFERADDRESS 0x8F
 #define SETBUFFERADDRESS (uint8_t[]){OPCODE_SETBUFFERADDRESS,0,0}
@@ -42,16 +36,16 @@
 //param4 low data opt - 0
 #define SETMODULATION (uint8_t[]){OPCODE_MODULATION,7,4,1,0}
 
-//params taken from waveshare testcode ping pong
 #define OPCODE_PACKETPARAMS 0x8C
 //param1 - preamble len msb
 //param2 - preamble len lsb
 //param3 - header type
-//param4 - payload length
+//param4 - payload length for transmit table 13-68 or 0xFF max for receive
 //param5 - crc type
 //param6 - invert iq
-//#define SETPACKETPARAM (uint8_t[]){OPCODE_PACKETPARAMS,8,0,0,0xFF,1,0}
-#define SETPACKETPARAM (uint8_t[]){OPCODE_PACKETPARAMS,0,8,0,0xFF,1,0}
+#define SETTXPACKETPARAM (uint8_t[]){OPCODE_PACKETPARAMS,0x00,0x0C,0x00,0x07,0x00,0x00}
+#define SETRXPACKETPARAM (uint8_t[]){OPCODE_PACKETPARAMS,0x00,0x0C,0x00,0xFF,0x00,0x00}
+//#define SETRXPACKETPARAM (uint8_t[]){OPCODE_RXPACKETPARAM,0x00,0x08,0x00,0xFF,0x00,0x00}
 
 #define OPCODE_PACKETTYPE 0x8A
 //param 1 lora mode
@@ -81,7 +75,6 @@
 #define SETTX (uint8_t[]){OPCODE_SETTX,0xFF,0xFF,0xFF}
 
 #define OPCODE_READREGISTER 0x1D
-
 //read register 0x0740 result should be 0x14
 #define READREGTEST (uint8_t[]){OPCODE_READREGISTER,0x07,0x40,0}
 
@@ -98,9 +91,6 @@
 //param - lorapacketlength
 //param - memory offset
 #define GETRXBUFFERSTATUS (uint8_t[]){OPCODE_RXBUFFERSTATUS,0xFF,0xFF,0xFF}
-
-#define OPCODE_RXPACKETPARAM 0x8C
-#define SETRXPACKETPARAM (uint8_t[]){OPCODE_RXPACKETPARAM,0x00,0x0C,0x00,0xFF,0x00,0x00}
 
 #define OPCODE_SETRX 0x82
 #define SETRX (uint8_t[]){OPCODE_SETRX,0xFF,0xFF,0xFF}
